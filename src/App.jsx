@@ -86,7 +86,8 @@ export default function App() {
          Be thorough and include as much of the video content as possible.`;
 
     try {
-      const apiKey = atob(import.meta.env.VITE_GEMINI_API_KEY || '');
+      const raw = import.meta.env.VITE_GEMINI_API_KEY || '';
+const apiKey = raw.startsWith('AIza') ? raw : atob(raw);
       if (!apiKey) {
         setError(".env ফাইলে VITE_GEMINI_API_KEY সেট করুন।");
         setLoading(false);
