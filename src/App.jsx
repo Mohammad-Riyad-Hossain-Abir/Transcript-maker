@@ -96,26 +96,24 @@ const apiKey = raw.startsWith('AIza') ? raw : atob(raw);
       }
 
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            tools: [{ google_search: {} }],
-            generationConfig: { maxOutputTokens: 4000 },
-          }),
-        }
-      );
+  "https://openrouter.ai/api/v1/chat/completions",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "meta-llama/llama-3.1-8b-instruct:free",
+      messages: [{ role: "user", content: prompt }],
+    }),
+  }
+);
 
-      const data = await res.json();
-      if (data.error) throw new Error(data.error.message);
+const data = await res.json();
+if (data.error) throw new Error(data.error.message);
 
-      const fullText = data.candidates?.[0]?.content?.parts
-        ?.filter((p) => p.text)
-        ?.map((p) => p.text)
-        ?.join("\n") || "কোনো ট্রান্সক্রিপ্ট পাওয়া যায়নি।";
-
+const fullText = data.choices?.[0]?.message?.content || "কোনো ট্রান্সক্রিপ্ট পাওয়া যায়নি।";
       setTranscript(fullText);
     } catch (e) {
       setError("ট্রান্সক্রিপ্ট আনতে সমস্যা হয়েছে: " + e.message);
