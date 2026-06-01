@@ -1,4 +1,4 @@
-// v8
+// v9
 import { useState, useRef } from "react";
 
 const LANGUAGES = [
@@ -103,7 +103,7 @@ export default function App() {
       "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "nvidia/nemotron-super-49b-v1:free",
+      model: "nvidia/nemotron-3-super-120b-a12b:free",
       messages: [{ role: "user", content: prompt }],
     }),
   }
