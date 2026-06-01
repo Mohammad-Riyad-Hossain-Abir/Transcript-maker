@@ -103,7 +103,7 @@ export default function App() {
       "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "google/gemma-3-4b-it:free",
+      model: "nvidia/nemotron-super-49b-v1:free",
       messages: [{ role: "user", content: prompt }],
     }),
   }
