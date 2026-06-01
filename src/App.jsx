@@ -55,7 +55,7 @@ export default function App() {
       ? `You are a YouTube transcript extractor. The YouTube video ID is: ${videoId}
          The video URL is: https://www.youtube.com/watch?v=${videoId}
          
-         Please use web search to:
+         Please search the web and:
          1. Find information about this YouTube video
          2. Get or reconstruct the transcript/content of this video in ${selectedLang?.label} language
          3. Then translate the full transcript to ${translateLang?.label} (${translateLang?.native})
@@ -72,7 +72,7 @@ export default function App() {
       : `You are a YouTube transcript extractor. The YouTube video ID is: ${videoId}
          The video URL is: https://www.youtube.com/watch?v=${videoId}
          
-         Please use web search to:
+         Please search the web and:
          1. Find information about this YouTube video
          2. Get or reconstruct the transcript/content of this video in ${selectedLang?.label} language
          
@@ -86,40 +86,37 @@ export default function App() {
          Be thorough and include as much of the video content as possible.`;
 
     try {
-      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       if (!apiKey) {
-        setError(".env ফাইলে VITE_ANTHROPIC_API_KEY সেট করুন।");
+        setError(".env ফাইলে VITE_GEMINI_API_KEY সেট করুন।");
         setLoading(false);
         return;
       }
 
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4000,
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            tools: [{ google_search: {} }],
+            generationConfig: { maxOutputTokens: 4000 },
+          }),
+        }
+      );
 
       const data = await res.json();
       if (data.error) throw new Error(data.error.message);
 
-      const fullText = data.content
-        .filter((b) => b.type === "text")
-        .map((b) => b.text)
-        .join("\n");
+      const fullText = data.candidates?.[0]?.content?.parts
+        ?.filter((p) => p.text)
+        ?.map((p) => p.text)
+        ?.join("\n") || "কোনো ট্রান্সক্রিপ্ট পাওয়া যায়নি।";
 
       setTranscript(fullText);
     } catch (e) {
-      setError("ট্রান্সক্রিপ্ট আনতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+      setError("ট্রান্সক্রিপ্ট আনতে সমস্যা হয়েছে: " + e.message);
     } finally {
       setLoading(false);
     }
@@ -202,28 +199,26 @@ export default function App() {
             <label style={{ display: "block", fontSize: 12, color: "#888", letterSpacing: "1.5px", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 8 }}>
               YouTube লিংক
             </label>
-            <div style={{ display: "flex", gap: 10 }}>
-              <input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://www.youtube.com/watch?v=..."
-                style={{
-                  flex: 1,
-                  background: "#0a0a0f",
-                  border: "1px solid #2a2a3a",
-                  borderRadius: 10,
-                  padding: "13px 16px",
-                  color: "#e8e0d0",
-                  fontSize: 14,
-                  fontFamily: "monospace",
-                  outline: "none",
-                  transition: "border-color 0.2s",
-                }}
-                onFocus={(e) => e.target.style.borderColor = "#e63946"}
-                onBlur={(e) => e.target.style.borderColor = "#2a2a3a"}
-                onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-              />
-            </div>
+            <input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=..."
+              style={{
+                width: "100%",
+                background: "#0a0a0f",
+                border: "1px solid #2a2a3a",
+                borderRadius: 10,
+                padding: "13px 16px",
+                color: "#e8e0d0",
+                fontSize: 14,
+                fontFamily: "monospace",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+              onFocus={(e) => e.target.style.borderColor = "#e63946"}
+              onBlur={(e) => e.target.style.borderColor = "#2a2a3a"}
+              onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+            />
           </div>
 
           {/* Language Row */}
@@ -244,7 +239,6 @@ export default function App() {
                   color: "#e8e0d0",
                   fontSize: 14,
                   outline: "none",
-                  cursor: "pointer",
                 }}
               >
                 {LANGUAGES.map((l) => (
@@ -252,24 +246,22 @@ export default function App() {
                 ))}
               </select>
             </div>
-            <div style={{ opacity: shouldTranslate ? 1 : 0.4 }}>
+            <div>
               <label style={{ display: "block", fontSize: 12, color: "#888", letterSpacing: "1.5px", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 8 }}>
-                অনুবাদ করুন
+                অনুবাদের ভাষা
               </label>
               <select
                 value={translateTo}
                 onChange={(e) => setTranslateTo(e.target.value)}
-                disabled={!shouldTranslate}
                 style={{
                   width: "100%",
                   background: "#0a0a0f",
-                  border: `1px solid ${shouldTranslate ? "#e63946" : "#2a2a3a"}`,
+                  border: "1px solid #2a2a3a",
                   borderRadius: 10,
                   padding: "12px 14px",
                   color: "#e8e0d0",
                   fontSize: 14,
                   outline: "none",
-                  cursor: shouldTranslate ? "pointer" : "not-allowed",
                 }}
               >
                 {LANGUAGES.map((l) => (
@@ -302,6 +294,7 @@ export default function App() {
               borderRadius: 11,
               position: "relative",
               transition: "background 0.2s",
+              flexShrink: 0,
             }}>
               <div style={{
                 position: "absolute",
@@ -377,7 +370,6 @@ export default function App() {
             borderRadius: 16,
             overflow: "hidden",
           }}>
-            {/* Toolbar */}
             <div style={{
               padding: "14px 20px",
               borderBottom: "1px solid #2a2a3a",
@@ -416,11 +408,10 @@ export default function App() {
               </button>
             </div>
 
-            {/* Transcript Text */}
             <div
               ref={transcriptRef}
               style={{
-                padding: "28px 28px",
+                padding: "28px",
                 maxHeight: 480,
                 overflowY: "auto",
                 lineHeight: 1.9,
@@ -488,4 +479,4 @@ export default function App() {
       `}</style>
     </div>
   );
-                }
+}
