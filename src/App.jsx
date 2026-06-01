@@ -1,4 +1,4 @@
-// v5
+// v6
 import { useState, useRef } from "react";
 
 const LANGUAGES = [
@@ -103,7 +103,7 @@ export default function App() {
       "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "meta-llama/llama-3.1-8b-instruct:free",
+      model: "mistralai/mistral-7b-instruct:free",
       messages: [{ role: "user", content: prompt }],
     }),
   }
