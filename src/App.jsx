@@ -1,4 +1,4 @@
-// v6
+// v7
 import { useState, useRef } from "react";
 
 const LANGUAGES = [
@@ -103,7 +103,7 @@ export default function App() {
       "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "mistralai/mistral-7b-instruct:free",
+      model: "google/gemma-3-4b-it:free",
       messages: [{ role: "user", content: prompt }],
     }),
   }
